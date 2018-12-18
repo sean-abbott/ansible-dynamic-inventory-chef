@@ -1,14 +1,22 @@
 #!/usr/bin/env python
-
 from __future__ import print_function
+
 import argparse
-import json
 import chef
+import json
 import os
-import sys
 import re
+import sys
+import urllib3
+
+from six import iteritems
 from time import time
-import ConfigParser
+
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 try:
     import json
@@ -55,7 +63,7 @@ class ChefInventory:
             sys.exit(1)
 
     def read_settings(self):
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         chef_default_ini_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'chef.ini')
         chef_ini_path = os.environ.get('CHEF_INI_PATH', chef_default_ini_path)
         config.read(chef_ini_path)
@@ -137,7 +145,7 @@ class ChefInventory:
         hostvars = {}
 
         data = self.read_cache()
-        for name, node in data.iteritems():
+        for name, node in iteritems(data):
             # make sure node is configured/working
             if ( "ipaddress" in node["automatic"].keys() ):
                 if name not in hostvars:
@@ -156,8 +164,8 @@ class ChefInventory:
                     role = "role_%s" % self.to_safe(r)
                     if role not in groups:
                         groups[role] = []
-                    groups[role].append(node["automatic"]["ipaddress"])
-            
+                    #groups[role].append(node["automatic"]["ipaddress"])
+
             if 'expanded_run_list' in node["automatic"]:
                 for r in self.check_key(node['automatic'], 'expanded_run_list'):
                     recipe = "recipe_%s" % self.to_safe(r)
@@ -179,7 +187,7 @@ class ChefInventory:
                     groups[item].append(name)
 
         # remove any duplicates
-        groups = {key : list(set(items)) for (key, items) in groups.iteritems() }
+        groups = {key : list(set(items)) for (key, items) in iteritems(groups) }
 
         meta = { "_meta" : { "hostvars" : hostvars } }
         groups.update(meta) 
